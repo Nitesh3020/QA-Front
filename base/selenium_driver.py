@@ -5,6 +5,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import *
 import time
 import os
+import traceback
 
 class SeleniumDriver():
 
@@ -69,6 +70,22 @@ class SeleniumDriver():
 
 
 
+    def getElementList(self,locator,locatorType ="id"):
+        """
+        Get List Elements
+        """    
+        locatorType = locatorType.lower
+        byType = self.getByType(locatorType)
+        elements = self.driver.find_elements(byType, locator)
+        if len(elements) > 0:
+            self.log.info("Element list FOUND with locator:" + locator + "and locatorType:" + locatorType)
+        else:
+            self.log.info("Element list NOT FOUND with locator: " + locator + "and locatorType:" + locatorType)
+        return elements
+            
+            
+        
+        
     def elementClick(self,locator, locatorType="id"):
         """
         Click on an element -> MODIFIED
@@ -93,6 +110,49 @@ class SeleniumDriver():
             self.log.info("Cannot send data on the element with locator:" + locator + "locatorType:" + locatorType)
             print_stack()
 
+    
+    def sendKeysWhenReady(self, data, locator="", locatorType="id"):
+        """
+        Send keys to an element -> MODIFIED
+        Either provide element or a combination of locator and locatorType
+        """
+        try:
+            byType = self.getByType(locatorType)
+            self.log.info("Waiting for maximum :: " + str(10) +
+                          " :: seconds for element to be visible")
+            wait = WebDriverWait(self.driver, timeout=10,
+                                 poll_frequency=1,
+                                 ignored_exceptions=[NoSuchElementException,
+                                                     ElementNotVisibleException,
+                                                     ElementNotSelectableException])
+            element = wait.until(EC.visibility_of_element_located((byType, locator)))
+            self.log.info("Element appeared on the web page")
+            element.click()
+            element.send_keys(data)
+
+            if element.get_attribute("value") != data:
+                self.log.debug("Text is not sent by xpath in field so i will try to send string char by char!")
+                element.clear()
+                for i in range(len(data)):
+                    element.send_keys(data[i] + "")
+            self.log.info("Sent data on element with locator: " + locator + " locatorType: " + locatorType)
+        except:
+            self.log.info("Element not appeared on the web page")
+            self.log.error("Exception Caught: {}".format(traceback.format_exc()))
+            self.log.error("".join(traceback.format_stack()))
+
+
+
+    def clearField(self, locator="", locatorType="id"):
+        """
+        Clear an element 
+        """
+        element = self.getElement(locator, locatorType)
+        element.clear()    
+        self.log.info("Clear field with locator: " + locator + " locatorType: " + locatorType)
+        
+        
+    
     def getText(self, locator="", locatorType="id", element=None, info=""):
         """
         NEW METHOD
@@ -118,6 +178,9 @@ class SeleniumDriver():
             text = None
         return text
 
+    
+    
+    
     def isElementPresent(self,locator,locatorType="id"):
         try:
             element = self.getElement(locator,locatorType)
@@ -129,6 +192,9 @@ class SeleniumDriver():
         except:
             print("Element not found")
             return False
+    
+    
+    
     
     def isElementDisplayed(self, locator="", locatorType="id", element=None):
         """
@@ -169,6 +235,7 @@ class SeleniumDriver():
 
 
 
+    
     def waitForElement(self,locator, locatorType="id",
                        timeout=10, pollFrequency=0.5):
 
@@ -192,14 +259,152 @@ class SeleniumDriver():
         return element
     time.sleep(2)
     
+    
+    
+    
     def webScroll(self, direction="up"):
         """
         NEW METHOD
         """
         if direction == "up":
             # Scroll Up
-            self.driver.execute_script("window.scrollBy(0, -1000);")
+            self.driver.execute_script("window.scrollBy(0, -800);")
 
         if direction == "down":
             # Scroll Down
-            self.driver.execute_script("window.scrollBy(0, 1000);")
+            self.driver.execute_script("window.scrollBy(0, 800);")
+            
+            
+    
+    def SwitchFrameByIndex(self, locator, locatorType="id"):
+
+        """
+        Get iframe index using element locator inside iframe
+
+        Parameters:
+            1. Required:
+                locator   - Locator of the element
+            2. Optional:
+                locatorType - Locator Type to find the element
+        Returns:
+            Index of iframe
+        Exception:
+            None
+        """
+        result = False
+        try:
+            iframe_list = self.getElementList("<iframe_locator>", locatorType="id")
+            self.log.info("Length of iframe list: ")
+            self.log.info(str(len(iframe_list)))
+            for i in range(len(iframe_list)):
+                self.switchToFrame(index=iframe_list[i])
+                result = self.isElementPresent(locator, locatorType)
+                if result:
+                    self.log.info("iframe index is:")
+                    self.log.info(str(i))
+                    break
+                self.switchToDefaultContent()
+            return result
+        except:
+            print("iFrame index not found")
+            return result
+        
+        
+                
+    def switchtoFrame(self, id ="" ,name ="", index = None):
+        """
+        Switch to iframe using element locator inside iframe
+        
+        Parameters:
+            1. Required:
+                None
+            2. optional:
+                1. id - id of the iframe
+                2. name - name of the iframe
+                3. index - index of the iframe
+        Returns:
+            None
+        Exception:
+            None        
+        """
+        if id:
+            self.driver.switch_to.frame(id)
+        elif name:
+            self.driver.switch_to.frame(name)
+        else:
+            self.driver.switch_to.frame(index)
+            
+            
+            
+    def switchToDefaultContent(self):
+        """
+        Switch to default content
+
+        Parameters:
+            None
+        Returns:
+            None
+        Exception:
+            None
+        """
+        self.driver.switch_to.default_content()
+
+    
+    
+    def getElementAttributeValue(self, attribute, element=None, locator="", locatorType="id"):
+        """
+        Get value of the attribute of element
+
+        Parameters:
+            1. Required:
+                1. attribute - attribute whose value to find
+
+            2. Optional:
+                1. element   - Element whose attribute need to find
+                2. locator   - Locator of the element
+                3. locatorType - Locator Type to find the element
+
+        Returns:
+            Value of the attribute
+        Exception:
+            None
+        """
+        if locator:
+            element = self.getElement(locator=locator, locatorType=locatorType)
+        value = element.get_attribute(attribute)
+        return value
+
+    
+    
+    def isEnabled(self, locator, locatorType="id", info=""):
+        """
+        Check if element is enabled
+
+        Parameters:
+            1. Required:
+                1. locator - Locator of the element to check
+            2. Optional:
+                1. locatorType - Type of the locator(id(default), xpath, css, className, linkText)
+                2. info - Information about the element, label/name of the element
+        Returns:
+            boolean
+        Exception:
+            None
+        """
+        element = self.getElement(locator, locatorType=locatorType)
+        enabled = False
+        try:
+            attributeValue = self.getElementAttributeValue(element=element, attribute="disabled")
+            if attributeValue is not None:
+                enabled = element.is_enabled()
+            else:
+                value = self.getElementAttributeValue(element=element, attribute="class")
+                self.log.info("Attribute value From Application Web UI --> :: " + value)
+                enabled = not ("disabled" in value)
+            if enabled:
+                self.log.info("Element :: '" + info + "' is enabled")
+            else:
+                self.log.info("Element :: '" + info + "' is not enabled")
+        except:
+            self.log.error("Element :: '" + info + "' state could not be found")
+        return enabled      
