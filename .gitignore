@@ -4,3 +4,4 @@ __pycache__
 performance_logs.json
 automation.log
 .pytest_cache
+screenshots
