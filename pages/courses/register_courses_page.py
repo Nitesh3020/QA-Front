@@ -33,7 +33,7 @@ class RegisterCoursesPage(BasePage):
     def clickMainCourse(self):
         print("I reached here")
         self.driver.execute_script("arguments[0].click();", self.getElement("//a[@href='/courses']", locatorType="xpath"))
-    
+        
     def enterCourseName(self, course_name):
         # Enter course name in the search box
         self.sendKeys(course_name, locator=self._search_box, locatorType="xpath")

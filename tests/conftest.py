@@ -20,7 +20,7 @@ def setUp():
 @pytest.fixture(scope="class")
 def oneTimeSetUp(request, browser):
     print("Running one-time setUp")
-    baseURL = "https://www.letskodeit.com/"
+    baseURL = "https://in.bookmyshow.com/explore/home/chennai"
 
     if browser == 'firefox':
         driver = webdriver.Firefox()
@@ -32,7 +32,7 @@ def oneTimeSetUp(request, browser):
         # Chrome options
         options = Options()
         options.add_argument("start-maximized")
-        options.add_argument("--auto-open-devtools-for-tabs")
+        #options.add_argument("--auto-open-devtools-for-tabs")
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_experimental_option('useAutomationExtension', False)
         options.set_capability("goog:loggingPrefs", {"performance": "ALL"})
